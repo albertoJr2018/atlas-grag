@@ -30,25 +30,26 @@ But it **cannot reason** that:
 
 ## 🏗️ Architecture
 
-```
-┌─────────────────┐     ┌─────────────────┐
-│   User Query    │────▶│  Entity         │
-└─────────────────┘     │  Extraction     │
-                        └────────┬────────┘
-                                 │
-              ┌──────────────────┼──────────────────┐
-              ▼                  ▼                  ▼
-     ┌────────────────┐ ┌────────────────┐ ┌────────────────┐
-     │  ChromaDB      │ │   Neo4j        │ │   LLM Chain    │
-     │  Vector Search │ │   Graph Query  │ │   Reasoning    │
-     └───────┬────────┘ └───────┬────────┘ └───────┬────────┘
-             │                  │                  │
-             └──────────────────┼──────────────────┘
-                                ▼
-                    ┌─────────────────────┐
-                    │  Synthesized Answer │
-                    │  with Graph Paths   │
-                    └─────────────────────┘
+```mermaid
+graph TD
+    UserQuery[User Query] -->|Start| HybridRetriever
+    
+    subgraph "Hybrid Retrieval"
+        HybridRetriever -->|Extract Entities| LLM_Extract[LLM Entity Extractor]
+        HybridRetriever -->|Semantic Search| ChromaDB[(ChromaDB)]
+        
+        LLM_Extract -->|Entities| Neo4j[(Neo4j Graph)]
+        Neo4j -->|Graph Paths & Neighbors| ContextBuilder
+        ChromaDB -->|Vector Chunks| ContextBuilder
+    end
+    
+    ContextBuilder -->|Combined Context| ReasoningChain[LLM Reasoning Chain]
+    ReasoningChain -->|Chain of Thought| FinalAnswer[Synthesized Answer]
+    
+    style UserQuery fill:#f9f,stroke:#333,stroke-width:2px
+    style FinalAnswer fill:#9f9,stroke:#333,stroke-width:2px
+    style Neo4j fill:#bbf,stroke:#333,stroke-width:2px
+    style ChromaDB fill:#bfb,stroke:#333,stroke-width:2px
 ```
 
 ## 🛠️ Tech Stack
